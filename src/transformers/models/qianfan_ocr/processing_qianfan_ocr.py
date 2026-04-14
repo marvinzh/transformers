@@ -54,6 +54,7 @@ class QianfanOCRProcessor(ProcessorMixin):
         start_image_token: str = "<img>",
         end_image_token: str = "</img>",
         context_image_token: str = "<IMG_CONTEXT>",
+        image_placeholder_token: str = "<image>",
         **kwargs,
     ):
         r"""
@@ -63,6 +64,10 @@ class QianfanOCRProcessor(ProcessorMixin):
             The token used to mark the end of an image sequence.
         context_image_token (`str`, *optional*, defaults to `"<IMG_CONTEXT>"`):
             The token used as an image context placeholder in the input sequence.
+        image_placeholder_token (`str`, *optional*, defaults to `"<image>"`):
+            The token emitted by the chat template to mark image positions.
+            It is replaced by the full ``<img><IMG_CONTEXT>...<IMG_CONTEXT></img>``
+            sequence during processing.
         """
         # InternVLProcessor.__init__ reads these as tokenizer attributes.
         # Inject them so it works with tokenizers that don't expose them (e.g. Qwen2Tokenizer).
@@ -89,6 +94,7 @@ class QianfanOCRProcessor(ProcessorMixin):
         self.start_image_token = start_image_token
         self.end_image_token = end_image_token
         self.image_token = context_image_token
+        self.image_placeholder_token = image_placeholder_token
         self.video_token = None
         self.start_image_token_id = tokenizer.convert_tokens_to_ids(start_image_token)
         self.end_image_token_id = tokenizer.convert_tokens_to_ids(end_image_token)
@@ -116,11 +122,11 @@ class QianfanOCRProcessor(ProcessorMixin):
         replace_strings = []
         for prompt in text:
             new_prompt = prompt
-            while self.image_token in new_prompt:
+            while self.image_placeholder_token in new_prompt:
                 start_index = image_num_patches_indices[image_index - 1] if image_index > 0 else 0
                 end_index = image_num_patches_indices[image_index]
                 image_patches.append(image_pixel_values[start_index:end_index])
-                new_prompt = new_prompt.replace(self.image_token, "<placeholder>", 1)
+                new_prompt = new_prompt.replace(self.image_placeholder_token, "<placeholder>", 1)
                 replace_strings.append(
                     f"{self.start_image_token}{self.image_token * self.image_seq_length * image_num_patches[image_index]}{self.end_image_token}"
                 )
