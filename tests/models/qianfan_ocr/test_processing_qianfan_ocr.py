@@ -45,7 +45,7 @@ class QianfanOCRProcessorTest(ProcessorTesterMixin, unittest.TestCase):
 
     @classmethod
     def _setup_test_attributes(cls, processor):
-        cls.image_token = processor.image_token
+        cls.image_token = processor.image_placeholder_token
 
     @unittest.skip("QianfanOCR does not support video processing")
     def test_video_processor_defaults(self):
